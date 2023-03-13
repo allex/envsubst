@@ -17,23 +17,16 @@ const (
 
 // The restrictions option controls the parsring restriction.
 type Restrictions struct {
-	NoUnset bool
-	NoEmpty bool
-	NoDigit bool
+	NoUnset    bool
+	NoEmpty    bool
+	NoDigit    bool
+	VarMatcher varMatcher
 }
-
-// Restrictions specifier
-var (
-	Relaxed = &Restrictions{false, false, false}
-	NoEmpty = &Restrictions{false, true, false}
-	NoUnset = &Restrictions{true, false, false}
-	Strict  = &Restrictions{true, true, false}
-)
 
 // Parser type initializer
 type Parser struct {
 	Name     string // name of the processing template
-	Env      Env
+	Env      *Env
 	Restrict *Restrictions
 	Mode     Mode
 	// parsing state;
@@ -44,17 +37,17 @@ type Parser struct {
 }
 
 // New allocates a new Parser with the given name.
-func New(name string, env []string, r *Restrictions) *Parser {
+func New(name string, env *Env, r *Restrictions) *Parser {
 	return &Parser{
 		Name:     name,
-		Env:      Env(env),
+		Env:      env,
 		Restrict: r,
 	}
 }
 
 // Parse parses the given string.
 func (p *Parser) Parse(text string) (string, error) {
-	p.lex = lex(text, p.Restrict.NoDigit)
+	p.lex = lex(text, p.Restrict.NoDigit, p.Restrict.VarMatcher)
 	// Build internal array of all unset or empty vars here
 	var errs []error
 	// clean parse state

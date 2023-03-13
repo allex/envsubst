@@ -57,17 +57,21 @@ var tokens = map[itemType]string{
 // stateFn represents the state of the lexer as a function that returns the next state.
 type stateFn func(*lexer) stateFn
 
+// varMatch predicate function to filter the valid variable tokens
+type varMatcher func(variable string) bool
+
 // lexer holds the state of the scanner
 type lexer struct {
-	input     string    // the string being lexed
-	state     stateFn   // the next lexing function to enter
-	pos       Pos       // current position in the input
-	start     Pos       // start position of this item
-	width     Pos       // width of last rune read from input
-	lastPos   Pos       // position of most recent item returned by nextItem
-	items     chan item // channel of lexed items
-	subsDepth int       // depth of substitution
-	noDigit   bool      // if the lexer skips variables that start with a digit
+	input     string     // the string being lexed
+	state     stateFn    // the next lexing function to enter
+	pos       Pos        // current position in the input
+	start     Pos        // start position of this item
+	width     Pos        // width of last rune read from input
+	lastPos   Pos        // position of most recent item returned by nextItem
+	items     chan item  // channel of lexed items
+	subsDepth int        // depth of substitution
+	noDigit   bool       // if the lexer skips variables that start with a digit
+	matcher   varMatcher // the variable token predicate
 }
 
 // next returns the next rune in the input.
@@ -121,11 +125,12 @@ func (l *lexer) nextItem() item {
 }
 
 // lex creates a new scanner for the input string.
-func lex(input string, noDigit bool) *lexer {
+func lex(input string, noDigit bool, matcher varMatcher) *lexer {
 	l := &lexer{
 		input:   input,
 		items:   make(chan item),
 		noDigit: noDigit,
+		matcher: matcher,
 	}
 	go l.run()
 	return l
@@ -199,7 +204,11 @@ func lexVariable(l *lexer) stateFn {
 			break
 		}
 	}
-	if v := l.input[l.start:l.pos]; v == "_" || v == "$_" {
+	v := l.input[l.start:l.pos]
+	if v[0] == '$' {
+		v = v[1:]
+	}
+	if v == "_" || (l.matcher != nil && !l.matcher(v)) {
 		return lexText
 	}
 	l.emit(itemVariable)

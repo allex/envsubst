@@ -40,11 +40,11 @@ func (t *TextNode) String() (string, error) {
 type VariableNode struct {
 	NodeType
 	Ident    string
-	Env      Env
+	Env      *Env
 	Restrict *Restrictions
 }
 
-func NewVariable(ident string, env Env, restrict *Restrictions) *VariableNode {
+func NewVariable(ident string, env *Env, restrict *Restrictions) *VariableNode {
 	return &VariableNode{NodeVariable, ident, env, restrict}
 }
 

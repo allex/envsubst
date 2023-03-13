@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/a8m/envsubst/parse"
+	"github.com/allex/envsubst/parse"
 )
 
 // String returns the parsed template string after processing it.
@@ -18,13 +18,13 @@ func String(s string) (string, error) {
 // an error describing the failure.
 // Errors on first failure or returns a collection of failures if failOnFirst is false
 func StringRestricted(s string, noUnset, noEmpty bool) (string, error) {
-	return StringRestrictedNoDigit(s, noUnset, noEmpty , false)
+	return StringRestrictedNoDigit(s, noUnset, noEmpty, false)
 }
 
 // Like StringRestricted but additionally allows to ignore env variables which start with a digit.
 func StringRestrictedNoDigit(s string, noUnset, noEmpty bool, noDigit bool) (string, error) {
-	return parse.New("string", os.Environ(),
-		&parse.Restrictions{noUnset, noEmpty, noDigit}).Parse(s)
+	return parse.New("string", parse.NewEnv(os.Environ()),
+		&parse.Restrictions{NoUnset: noUnset, NoEmpty: noEmpty, NoDigit: noDigit, VarMatcher: nil}).Parse(s)
 }
 
 // Bytes returns the bytes represented by the parsed template after processing it.
@@ -42,8 +42,8 @@ func BytesRestricted(b []byte, noUnset, noEmpty bool) ([]byte, error) {
 
 // Like BytesRestricted but additionally allows to ignore env variables which start with a digit.
 func BytesRestrictedNoDigit(b []byte, noUnset, noEmpty bool, noDigit bool) ([]byte, error) {
-	s, err := parse.New("bytes", os.Environ(),
-		&parse.Restrictions{noUnset, noEmpty, noDigit}).Parse(string(b))
+	s, err := parse.New("bytes", parse.NewEnv(os.Environ()),
+		&parse.Restrictions{NoUnset: noUnset, NoEmpty: noEmpty, NoDigit: noDigit, VarMatcher: nil}).Parse(string(b))
 	if err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ Options:
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(usage))
+		fmt.Fprint(os.Stderr, usage)
 	}
 	flag.Parse()
 	var reader *bufio.Reader
@@ -81,8 +81,8 @@ func main() {
 	if *failFast {
 		parserMode = parse.Quick
 	}
-	restrictions := &parse.Restrictions{*noUnset, *noEmpty, *noDigit}
-	result, err := (&parse.Parser{Name: "string", Env: os.Environ(), Restrict: restrictions, Mode: parserMode}).Parse(data)
+	restrictions := &parse.Restrictions{NoUnset: *noUnset, NoEmpty: *noEmpty, NoDigit: *noDigit, VarMatcher: nil}
+	result, err := (&parse.Parser{Name: "string", Env: parse.NewEnv(os.Environ()), Restrict: restrictions, Mode: parserMode}).Parse(data)
 	if err != nil {
 		errorAndExit(err)
 	}

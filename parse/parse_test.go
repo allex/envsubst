@@ -4,13 +4,14 @@ import (
 	"testing"
 )
 
-var FakeEnv = []string{
+var FakeEnv = NewEnv([]string{
 	"BAR=bar",
 	"FOO=foo",
 	"EMPTY=",
 	"ALSO_EMPTY=",
 	"A=AAA",
-}
+	"test=test",
+})
 
 type mode int
 
@@ -19,6 +20,14 @@ const (
 	noUnset
 	noEmpty
 	strict
+)
+
+// Restrictions specifier
+var (
+	Relaxed = &Restrictions{false, false, false, nil}
+	NoEmpty = &Restrictions{false, true, false, nil}
+	NoUnset = &Restrictions{true, false, false, nil}
+	Strict  = &Restrictions{true, true, false, nil}
 )
 
 var restrict = map[mode]*Restrictions{
@@ -42,6 +51,7 @@ type parseTest struct {
 }
 
 var parseTests = []parseTest{
+	{"lower-case variable", "lower variable $test ok", "lower variable test ok", errNone},
 	{"empty", "", "", errNone},
 	{"env only", "$BAR", "bar", errNone},
 	{"with text", "$BAR baz", "bar baz", errNone},
