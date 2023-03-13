@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/a8m/envsubst/parse"
+	"github.com/allex/envsubst/parse"
 )
 
 var (
