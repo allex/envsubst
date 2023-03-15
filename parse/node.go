@@ -65,14 +65,14 @@ func (t *VariableNode) isSet() bool {
 
 func (t *VariableNode) validateNoUnset() error {
 	if t.Restrict.NoUnset && !t.isSet() {
-		return fmt.Errorf("variable ${%s} not set", t.Ident)
+		return Error(fmt.Sprintf("variable ${%s} not set", t.Ident), "NoUnset")
 	}
 	return nil
 }
 
 func (t *VariableNode) validateNoEmpty(value string) error {
 	if t.Restrict.NoEmpty && value == "" && t.isSet() {
-		return fmt.Errorf("variable ${%s} set but empty", t.Ident)
+		return Error(fmt.Sprintf("variable ${%s} set but empty", t.Ident), "NoEmpty")
 	}
 	return nil
 }
