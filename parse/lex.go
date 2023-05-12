@@ -209,6 +209,9 @@ func lexVariable(l *lexer) stateFn {
 		v = v[1:]
 	}
 	if v == "_" || (l.matcher != nil && !l.matcher(v)) {
+		if l.subsDepth > 0 {
+			l.subsDepth--
+		}
 		return lexText
 	}
 	l.emit(itemVariable)
