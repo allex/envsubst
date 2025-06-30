@@ -1,0 +1,107 @@
+---
+description:
+globs: *_test.go
+alwaysApply: false
+---
+# Go Development Rules
+
+## Test Case Formatting
+
+When writing Go test cases with struct literals, use compact single-line syntax instead of multi-line key-value format.
+
+### Guidelines:
+- Consolidate field declarations (e.g., `name, input, expected string`)
+- Define each test case on a single line with positional values
+- Maintain readability while reducing verbosity
+- For long function definitions within test cases, break the function onto a new line with proper indentation
+
+### Simplifying Test Declarations
+
+Always prefer removing struct field names and using positional values instead of verbose key-value syntax.
+
+**Transform from named fields to positional:**
+- Remove individual field names from struct definition
+- Consolidate fields of the same type into single declarations
+- Use positional values in test case definitions
+- Eliminate verbose key-value pairs in favor of direct value assignment
+
+### Examples:
+
+**Step 1: Transform from named fields to positional**
+
+*Before (verbose named fields):*
+```go
+var tests = []struct {
+    name     string
+    input    string
+    matcher  varMatcher
+    expected string
+    hasErr   bool
+}{
+    {
+        name:     "simple case",
+        input:    "$VAR",
+        matcher:  nil,
+        expected: "value",
+        hasErr:   false,
+    },
+}
+```
+
+*After (compact positional):*
+```go
+var tests = []struct {
+    name, input, expected string
+    matcher               varMatcher
+    hasErr                bool
+}{
+    {"simple case", "$VAR", "value", nil, false},
+}
+```
+
+**Step 2: Standard single-line format**
+```go
+testCases := []struct {
+    name, input, expected string
+    envs                  []string
+    hasError              bool
+}{
+    {"simple variable expansion", "Hello $USER", "Hello john", []string{"USER=john"}, false},
+    {"braced variable expansion", "Hello ${USER}", "Hello john", []string{"USER=john"}, false},
+    {"multiple variables", "$HOME/$USER/file", "/home/john/file", []string{"HOME=/home", "USER=john"}, false},
+}
+```
+
+**Step 3: Handle long functions with line breaks**
+```go
+testCases := []struct {
+    name, input, expected string
+    matcher               varMatcher
+    hasErr                bool
+}{
+    {"simple case", "$VAR", "value", nil, false},
+    {"complex matcher", "$BAR $FOO", "result",
+        func(v string) bool { return strings.HasPrefix(v, "prefix_") || len(v) > 10 }, false},
+    {"another case", "$TEST", "output",
+        func(v string) bool { return !strings.Contains(v, "exclude") }, false},
+}
+```
+
+**Avoid (Multi-line):**
+```go
+testCases := []struct {
+    name     string
+    input    string
+    expected string
+    envs     []string
+    hasError bool
+}{
+    {
+        name:     "simple variable expansion",
+        input:    "Hello $USER",
+        envs:     []string{"USER=john"},
+        expected: "Hello john",
+        hasError: false,
+    },
+}
+```

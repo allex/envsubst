@@ -75,6 +75,8 @@ func main() {
 }
 ```
 ### Docs
+> **📖 [Comprehensive API Documentation](API.md)** - Complete developer guide with examples, best practices, and advanced usage patterns
+
 > api docs here: [![GoDoc][godoc-img]][godoc-url]
 
 |__Expression__     | __Meaning__    |
