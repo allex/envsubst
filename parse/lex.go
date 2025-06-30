@@ -57,7 +57,11 @@ var tokens = map[itemType]string{
 // stateFn represents the state of the lexer as a function that returns the next state.
 type stateFn func(*lexer) stateFn
 
-// varMatch predicate function to filter the valid variable tokens
+// varMatcher is a predicate function that determines whether a variable name should be
+// recognized as a valid variable token during lexing. When a variable is encountered
+// (e.g., $VAR or ${VAR}), the matcher is called with the variable name (without the $ prefix).
+// If the matcher returns false, the variable is treated as plain text instead of a variable token.
+// A nil matcher accepts all variables except underscore ("_") which is always rejected.
 type varMatcher func(variable string) bool
 
 // lexer holds the state of the scanner
@@ -71,7 +75,7 @@ type lexer struct {
 	items     chan item  // channel of lexed items
 	subsDepth int        // depth of substitution
 	noDigit   bool       // if the lexer skips variables that start with a digit
-	matcher   varMatcher // the variable token predicate
+	matcher   varMatcher // optional variable filter; when non-nil, determines which variables are tokenized vs treated as text
 }
 
 // next returns the next rune in the input.
@@ -209,8 +213,10 @@ func lexVariable(l *lexer) stateFn {
 		v = v[1:]
 	}
 	if v == "_" || (l.matcher != nil && !l.matcher(v)) {
+		// If the variable doesn't match, emit as text
+		l.emit(itemText)
 		if l.subsDepth > 0 {
-			l.subsDepth--
+			return lexSubstitutionOperator
 		}
 		return lexText
 	}
