@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+
+## [1.0.4](https://github.com/allex/envsubst/compare/v1.0.3...v1.0.4) (2025-06-30)
+
+
+### Features
+
+* add comprehensive API documentation for envsubst package ([2d048c2](https://github.com/allex/envsubst/commit/2d048c29ad8517f7ad86dfd99152ca206122ba53))
+* add KeepUnset option to preserve undefined variables in envsubst ([b87f06c](https://github.com/allex/envsubst/commit/b87f06c65beb6f1e85cb271ffd137344086d2d0e))
+* implement custom variable matcher functionality in lexer tests ([b77c7b3](https://github.com/allex/envsubst/commit/b77c7b34d06c14f16c5b8bff4686382296179c37))
+
+
+### Bug Fixes
+
+* replace fmt.Fprintf with fmt.Fprint for error message output in envsubst ([11481e7](https://github.com/allex/envsubst/commit/11481e736c98db0cdabcde88dfd5051c1c31d600))
 
 ### [1.0.3](https://github.com/allex/envsubst/compare/v1.0.2...v1.0.3) (2023-05-12)
 
