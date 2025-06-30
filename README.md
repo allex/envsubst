@@ -1,7 +1,6 @@
 # envsubst
 [![GoDoc][godoc-img]][godoc-url]
 [![License][license-image]][license-url]
-[![Build status][travis-image]][travis-url]
 [![Github All Releases][releases-image]][releases]
 
 > Environment variables substitution for Go. see docs [below](#docs)
@@ -12,16 +11,16 @@
 Latest stable `envsubst` [prebuilt binaries for 64-bit Linux, or Mac OS X][releases] are available via Github releases.
 
 ###### Linux and MacOS
-```console
-curl -L https://github.com/allex/envsubst/releases/download/v1.2.0/envsubst-`uname -s`-`uname -m` -o envsubst
+```sh
+curl -L https://github.com/allex/envsubst/releases/download/v1.0.4/envsubst-$(uname -s)-$(uname -m) -o envsubst
 chmod +x envsubst
 sudo mv envsubst /usr/local/bin
 ```
 
 ###### Windows
 Download the latest prebuilt binary from [releases page][releases], or if you have curl installed:
-```console
-curl -L https://github.com/allex/envsubst/releases/download/v1.2.0/envsubst.exe
+```sh
+curl -L https://github.com/allex/envsubst/releases/download/v1.0.4/envsubst.exe
 ```
 
 ##### With go
@@ -39,8 +38,10 @@ envsubst -help
 ```
 
 #### Imposing restrictions
-There are three command line flags with which you can cause the substitution to stop with an error code, should the restriction associated with the flag not be met. This can be handy if you want to avoid creating e.g. configuration files with unset or empty parameters.
+There are several command line flags with which you can control the substitution behavior and cause it to stop with an error code when restrictions are not met. This can be handy if you want to avoid creating e.g. configuration files with unset or empty parameters.
 Setting a `-fail-fast` flag in conjunction with either no-unset or no-empty or both will result in a faster feedback loop, this can be especially useful when running through a large file or byte array input, otherwise a list of errors is returned.
+
+**Note:** The `-keep-unset` flag automatically disables `-no-unset` and `-no-empty` restrictions when used, as it preserves undefined variables in their original form rather than treating them as errors.
 
 The flags and their restrictions are: 
 
@@ -51,6 +52,7 @@ The flags and their restrictions are:
 |`-no-digit`  | do not replace variables starting with a digit, e.g. $1 and ${1} | `flag` |  `false` 
 |`-no-unset`  | fail if a variable is not set | `flag` |  `false` 
 |`-no-empty`  | fail if a variable is set but empty | `flag` | `false`
+|`-keep-unset`  | keep undefined variables as their original text instead of substituting them | `flag` | `false`
 |`-fail-fast`  | fails at first occurrence of an error, if `-no-empty` or `-no-unset` flags were **not** specified this is ignored | `flag` | `false`
 
 These flags can be combined to form tighter restrictions. 
@@ -100,10 +102,8 @@ func main() {
 MIT
 
 [releases]: https://github.com/allex/envsubst/releases
-[releases-image]: https://img.shields.io/github/downloads/a8m/envsubst/total.svg?style=for-the-badge
+[releases-image]: https://img.shields.io/github/downloads/allex/envsubst/total.svg?style=for-the-badge
 [godoc-url]: https://godoc.org/github.com/allex/envsubst
 [godoc-img]: https://img.shields.io/badge/godoc-reference-blue.svg?style=for-the-badge
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge
 [license-url]: LICENSE
-[travis-image]: https://img.shields.io/travis/a8m/envsubst.svg?style=for-the-badge
-[travis-url]: https://travis-ci.org/a8m/envsubst
