@@ -2,7 +2,6 @@ package parse
 
 import (
 	"errors"
-	"fmt"
 )
 
 type interErr struct {
@@ -21,7 +20,7 @@ func (e *interErr) Is(err error) bool {
 // envsubst internal error, with error code wrapped.
 func Error(err string, code string) *interErr {
 	return &interErr{
-		error: fmt.Errorf(err),
+		error: errors.New(err),
 		code:  code,
 	}
 }
