@@ -15,11 +15,34 @@ const (
 	AllErrors             // report all errors
 )
 
-// The restrictions option controls the parsring restriction.
+// Restrictions controls the parsing and substitution behavior of environment variables.
+// These options determine how the parser handles undefined variables, empty variables,
+// numeric variables, and variable matching patterns.
 type Restrictions struct {
-	NoUnset    bool
-	NoEmpty    bool
-	NoDigit    bool
+	// NoUnset when true causes the parser to return an error if a variable is not set.
+	// When false (default), unset variables are substituted with empty strings.
+	// Example: ${UNDEFINED_VAR} will cause an error if NoUnset is true.
+	NoUnset bool
+
+	// NoEmpty when true causes the parser to return an error if a variable is set but empty.
+	// When false (default), empty variables are substituted with empty strings.
+	// Example: If VAR="" then ${VAR} will cause an error if NoEmpty is true.
+	NoEmpty bool
+
+	// NoDigit when true causes the parser to ignore variables that start with a digit.
+	// When false (default), numeric variables are processed normally.
+	// Example: $1 and ${1} will be treated as literal text if NoDigit is true.
+	NoDigit bool
+
+	// KeepUnset when true causes undefined variables to be kept as their original text
+	// instead of being substituted with empty strings or causing errors.
+	// When true, this option automatically disables NoUnset and NoEmpty restrictions.
+	// Example: ${UNDEFINED_VAR} will remain as "${UNDEFINED_VAR}" in the output.
+	KeepUnset bool
+
+	// VarMatcher is an optional predicate function to filter valid variable tokens.
+	// If provided, only variables that pass this filter will be processed.
+	// Variables that don't match will be treated as literal text.
 	VarMatcher varMatcher
 }
 
@@ -38,6 +61,10 @@ type Parser struct {
 
 // New allocates a new Parser with the given name.
 func New(name string, env *Env, r *Restrictions) *Parser {
+	if r != nil && r.KeepUnset {
+		r.NoEmpty = false
+		r.NoUnset = false
+	}
 	return &Parser{
 		Name:     name,
 		Env:      env,
@@ -98,7 +125,7 @@ Loop:
 		case itemError:
 			return p.errorf(t.val)
 		case itemVariable:
-			varNode := NewVariable(strings.TrimPrefix(t.val, "$"), p.Env, p.Restrict)
+			varNode := NewVariableWithSource(strings.TrimPrefix(t.val, "$"), t.val, p.Env, p.Restrict)
 			p.nodes = append(p.nodes, varNode)
 		case itemLeftDelim:
 			if p.peek().typ == itemVariable {
@@ -122,18 +149,27 @@ Loop:
 func (p *Parser) action() (Node, error) {
 	var expType itemType
 	var defaultNode Node
-	varNode := NewVariable(p.next().val, p.Env, p.Restrict)
+
+	varToken := p.next()
+	varNode := NewVariable(varToken.val, p.Env, p.Restrict)
+
+	// Build source text for the substitution - start with the basic form
+	sourceText := "${" + varToken.val
+
 Loop:
 	for {
 		switch t := p.next(); t.typ {
 		case itemRightDelim:
+			sourceText += "}"
 			break Loop
 		case itemError:
 			return nil, p.errorf(t.val)
 		case itemVariable:
 			defaultNode = NewVariable(strings.TrimPrefix(t.val, "$"), p.Env, p.Restrict)
+			sourceText += t.val
 		case itemText:
 			n := NewText(t.val)
+			sourceText += t.val
 		Text:
 			for {
 				switch p.peek().typ {
@@ -141,15 +177,36 @@ Loop:
 					break Text
 				default:
 					// patch to accept all kind of chars
-					n.Text += p.next().val
+					nextToken := p.next()
+					n.Text += nextToken.val
+					sourceText += nextToken.val
 				}
 			}
 			defaultNode = n
 		default:
 			expType = t.typ
+			// Add operator tokens to source text
+			switch t.typ {
+			case itemColonDash:
+				sourceText += ":-"
+			case itemColonEquals:
+				sourceText += ":="
+			case itemColonPlus:
+				sourceText += ":+"
+			case itemDash:
+				sourceText += "-"
+			case itemEquals:
+				sourceText += "="
+			case itemPlus:
+				sourceText += "+"
+			}
 		}
 	}
-	return &SubstitutionNode{NodeSubstitution, expType, varNode, defaultNode}, nil
+
+	// Update the variable node with source text
+	varNode.Source = sourceText
+
+	return &SubstitutionNode{NodeSubstitution, expType, varNode, defaultNode, sourceText}, nil
 }
 
 func (p *Parser) errorf(s string) error {

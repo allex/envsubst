@@ -39,16 +39,31 @@ func (t *TextNode) String() (string, error) {
 
 type VariableNode struct {
 	NodeType
-	Ident    string
+	Ident    string // Variable identifier name (e.g., "VAR" from "$VAR" or "${VAR}")
+	Source   string // Store source text like "$VAR" or "${VAR}"
 	Env      *Env
 	Restrict *Restrictions
 }
 
 func NewVariable(ident string, env *Env, restrict *Restrictions) *VariableNode {
-	return &VariableNode{NodeVariable, ident, env, restrict}
+	return &VariableNode{NodeVariable, ident, "", env, restrict}
+}
+
+// NewVariableWithSource creates a VariableNode with source text preserved
+func NewVariableWithSource(ident, source string, env *Env, restrict *Restrictions) *VariableNode {
+	return &VariableNode{NodeVariable, ident, source, env, restrict}
 }
 
 func (t *VariableNode) String() (string, error) {
+	// If KeepUnset is enabled and variable is not set, return source text
+	if t.Restrict.KeepUnset && !t.isSet() {
+		if t.Source != "" {
+			return t.Source, nil
+		}
+		// Fallback to generating the source text format
+		return "$" + t.Ident, nil
+	}
+
 	if err := t.validateNoUnset(); err != nil {
 		return "", err
 	}
@@ -82,14 +97,17 @@ type SubstitutionNode struct {
 	ExpType  itemType
 	Variable *VariableNode
 	Default  Node // Default could be variable or text
+	Source   string
 }
 
 func (t *SubstitutionNode) String() (string, error) {
+	// Process default value logic first, regardless of KeepUnset setting
 	if t.ExpType >= itemPlus && t.Default != nil {
 		switch t.ExpType {
 		case itemColonDash, itemColonEquals:
-			if s, _ := t.Variable.String(); s != "" {
-				return s, nil
+			// For colon operators, check if variable is set AND not empty
+			if t.Variable.isSet() && t.Variable.Env.Get(t.Variable.Ident) != "" {
+				return t.Variable.String()
 			}
 			return t.Default.String()
 		case itemPlus, itemColonPlus:
@@ -98,10 +116,22 @@ func (t *SubstitutionNode) String() (string, error) {
 			}
 			return "", nil
 		default:
+			// For non-colon operators (dash, equals), check if variable is set
 			if !t.Variable.isSet() {
 				return t.Default.String()
 			}
 		}
 	}
+
+	// If KeepUnset is enabled and variable is not set, return source text
+	// (only if no defaults were processed above)
+	if t.Variable.Restrict.KeepUnset && !t.Variable.isSet() {
+		if t.Source != "" {
+			return t.Source, nil
+		}
+		// Fallback to generating the source text format
+		return "${" + t.Variable.Ident + "}", nil
+	}
+
 	return t.Variable.String()
 }

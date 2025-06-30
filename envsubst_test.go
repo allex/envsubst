@@ -27,3 +27,26 @@ func TestIntegration(t *testing.T) {
 		t.Error("Expect ReadFile integration test to pass")
 	}
 }
+
+func TestKeepUnsetIntegration(t *testing.T) {
+	// Test that undefined variables are kept as original text
+	input := "foo $UNDEFINED_VAR ${ALSO_UNDEFINED} $BAR"
+	expected := "foo $UNDEFINED_VAR ${ALSO_UNDEFINED} bar"
+
+	str, err := StringRestrictedKeepUnset(input, false, false, false, true)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if str != expected {
+		t.Errorf("Expected %q, got %q", expected, str)
+	}
+
+	// Test bytes function
+	bytes, err := BytesRestrictedKeepUnset([]byte(input), false, false, false, true)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if string(bytes) != expected {
+		t.Errorf("Expected %q, got %q", expected, string(bytes))
+	}
+}

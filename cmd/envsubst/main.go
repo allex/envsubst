@@ -12,12 +12,13 @@ import (
 )
 
 var (
-	input    = flag.String("i", "", "")
-	output   = flag.String("o", "", "")
-	noDigit  = flag.Bool("no-digit", false, "")
-	noUnset  = flag.Bool("no-unset", false, "")
-	noEmpty  = flag.Bool("no-empty", false, "")
-	failFast = flag.Bool("fail-fast", false, "")
+	input     = flag.String("i", "", "")
+	output    = flag.String("o", "", "")
+	noDigit   = flag.Bool("no-digit", false, "")
+	noUnset   = flag.Bool("no-unset", false, "")
+	noEmpty   = flag.Bool("no-empty", false, "")
+	keepUnset = flag.Bool("keep-unset", false, "")
+	failFast  = flag.Bool("fail-fast", false, "")
 )
 
 var usage = `Usage: envsubst [options...] <input>
@@ -28,6 +29,7 @@ Options:
   -no-digit  Do not replace variables starting with a digit. e.g. $1 and ${1}
   -no-unset  Fail if a variable is not set.
   -no-empty  Fail if a variable is set but empty.
+  -keep-unset Keep undefined variables as their original text instead of substituting them.
   -fail-fast Fail on first error otherwise display all failures if restrictions are set.
 `
 
@@ -81,7 +83,7 @@ func main() {
 	if *failFast {
 		parserMode = parse.Quick
 	}
-	restrictions := &parse.Restrictions{NoUnset: *noUnset, NoEmpty: *noEmpty, NoDigit: *noDigit, VarMatcher: nil}
+	restrictions := &parse.Restrictions{NoUnset: *noUnset, NoEmpty: *noEmpty, NoDigit: *noDigit, KeepUnset: *keepUnset, VarMatcher: nil}
 	result, err := (&parse.Parser{Name: "string", Env: parse.NewEnv(os.Environ()), Restrict: restrictions, Mode: parserMode}).Parse(data)
 	if err != nil {
 		errorAndExit(err)
