@@ -1,6 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [1.0.5](https://github.com/allex/envsubst/compare/v1.0.4...v1.0.5) (2025-07-01)
+
+
+### Features
+
+* enhance nested variable substitution handling in lexer and parser ([c5656f8](https://github.com/allex/envsubst/commit/c5656f8ee5051300e7bb8131d763ebc7feb37394))
 
 ## [1.0.4](https://github.com/allex/envsubst/compare/v1.0.3...v1.0.4) (2025-06-30)
 
