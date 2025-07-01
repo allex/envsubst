@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.6](https://github.com/allex/envsubst/compare/v1.0.5...v1.0.6) (2025-07-01)
+
+
+### Features
+
+* add env with lazy injection in envsubst ([5d37f59](https://github.com/allex/envsubst/commit/5d37f590590a0c3d55097236783039c7fd87b845))
+
 ### [1.0.5](https://github.com/allex/envsubst/compare/v1.0.4...v1.0.5) (2025-07-01)
 
 
