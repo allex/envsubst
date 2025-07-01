@@ -125,7 +125,7 @@ Loop:
 		case itemError:
 			return p.errorf(t.val)
 		case itemVariable:
-			varNode := NewVariableWithSource(strings.TrimPrefix(t.val, "$"), t.val, p.Env, p.Restrict)
+			varNode := NewVariable(strings.TrimPrefix(t.val, "$"), p.Env, p.Restrict)
 			p.nodes = append(p.nodes, varNode)
 		case itemLeftDelim:
 			if p.peek().typ == itemVariable {
@@ -153,23 +153,17 @@ func (p *Parser) action() (Node, error) {
 	varToken := p.next()
 	varNode := NewVariable(varToken.val, p.Env, p.Restrict)
 
-	// Build source text for the substitution - start with the basic form
-	sourceText := "${" + varToken.val
-
 Loop:
 	for {
 		switch t := p.next(); t.typ {
 		case itemRightDelim:
-			sourceText += "}"
 			break Loop
 		case itemError:
 			return nil, p.errorf(t.val)
 		case itemVariable:
 			defaultNode = NewVariable(strings.TrimPrefix(t.val, "$"), p.Env, p.Restrict)
-			sourceText += t.val
 		case itemText:
 			n := NewText(t.val)
-			sourceText += t.val
 		Text:
 			for {
 				switch p.peek().typ {
@@ -186,7 +180,6 @@ Loop:
 						// Variable not set, keep original text
 						n.Text += nextToken.val
 					}
-					sourceText += nextToken.val
 				case itemLeftDelim:
 					// For nested substitutions, break out of text processing
 					// and let the main parser loop handle the itemLeftDelim
@@ -195,7 +188,6 @@ Loop:
 					// patch to accept all kind of chars
 					nextToken := p.next()
 					n.Text += nextToken.val
-					sourceText += nextToken.val
 				}
 			}
 			defaultNode = n
@@ -212,39 +204,16 @@ Loop:
 					return nil, err
 				}
 				defaultNode = NewText(nestedResult)
-				// Add nested substitution to source text
-				if substNode, ok := nestedSubst.(*SubstitutionNode); ok {
-					sourceText += substNode.Source
-				}
 			} else {
 				// Not a valid variable substitution, treat as text
 				defaultNode = NewText("${")
-				sourceText += "${"
 			}
 		default:
 			expType = t.typ
-			// Add operator tokens to source text
-			switch t.typ {
-			case itemColonDash:
-				sourceText += ":-"
-			case itemColonEquals:
-				sourceText += ":="
-			case itemColonPlus:
-				sourceText += ":+"
-			case itemDash:
-				sourceText += "-"
-			case itemEquals:
-				sourceText += "="
-			case itemPlus:
-				sourceText += "+"
-			}
 		}
 	}
 
-	// Update the variable node with source text
-	varNode.Source = sourceText
-
-	return &SubstitutionNode{NodeSubstitution, expType, varNode, defaultNode, sourceText}, nil
+	return &SubstitutionNode{NodeSubstitution, expType, varNode, defaultNode}, nil
 }
 
 func (p *Parser) errorf(s string) error {

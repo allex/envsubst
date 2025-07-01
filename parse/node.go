@@ -40,27 +40,18 @@ func (t *TextNode) String() (string, error) {
 type VariableNode struct {
 	NodeType
 	Ident    string // Variable identifier name (e.g., "VAR" from "$VAR" or "${VAR}")
-	Source   string // Store source text like "$VAR" or "${VAR}"
 	Env      *Env
 	Restrict *Restrictions
 }
 
 func NewVariable(ident string, env *Env, restrict *Restrictions) *VariableNode {
-	return &VariableNode{NodeVariable, ident, "", env, restrict}
-}
-
-// NewVariableWithSource creates a VariableNode with source text preserved
-func NewVariableWithSource(ident, source string, env *Env, restrict *Restrictions) *VariableNode {
-	return &VariableNode{NodeVariable, ident, source, env, restrict}
+	return &VariableNode{NodeVariable, ident, env, restrict}
 }
 
 func (t *VariableNode) String() (string, error) {
 	// If KeepUnset is enabled and variable is not set, return source text
 	if t.Restrict.KeepUnset && !t.isSet() {
-		if t.Source != "" {
-			return t.Source, nil
-		}
-		// Fallback to generating the source text format
+		// Construct the source text format from ident
 		return "$" + t.Ident, nil
 	}
 
@@ -97,7 +88,6 @@ type SubstitutionNode struct {
 	ExpType  itemType
 	Variable *VariableNode
 	Default  Node // Default could be variable or text
-	Source   string
 }
 
 func (t *SubstitutionNode) String() (string, error) {
@@ -133,10 +123,7 @@ func (t *SubstitutionNode) String() (string, error) {
 	// If KeepUnset is enabled and variable is not set, return source text
 	// (only if no defaults were processed above)
 	if t.Variable.Restrict.KeepUnset && !t.Variable.isSet() {
-		if t.Source != "" {
-			return t.Source, nil
-		}
-		// Fallback to generating the source text format
+		// Construct the source text format from ident
 		return "${" + t.Variable.Ident + "}", nil
 	}
 
