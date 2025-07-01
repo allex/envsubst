@@ -1,7 +1,6 @@
 package envsubst
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/allex/envsubst/parse"
@@ -84,7 +83,7 @@ func ReadFileRestrictedNoDigit(filename string, noUnset, noEmpty bool, noDigit b
 // ReadFileRestrictedKeepUnset provides full control over all restriction options including KeepUnset.
 // If keepUnset is true, undefined variables will be kept as their original text instead of being substituted or causing errors.
 func ReadFileRestrictedKeepUnset(filename string, noUnset, noEmpty bool, noDigit bool, keepUnset bool) ([]byte, error) {
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
