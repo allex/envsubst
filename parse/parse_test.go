@@ -69,7 +69,7 @@ var parseTests = []parseTest{
 	{"$var not set or empty :-", "${EMPTY:-$BAR}", "bar", errNone},
 	{"$var not set or empty :=", "${EMPTY:=$BAR}", "bar", errNone},
 	{"if $var set evaluate expression as $other +", "${EMPTY+hello}", "hello", errNone},
-	{"if $var set evaluate expression as $other :+", "${EMPTY:+hello}", "hello", errNone},
+	{"if $var set evaluate expression as $other :+", "${EMPTY:+hello}", "", errNone},
 	{"if $var not set, use empty string +", "${NOTSET+hello}", "", errNone},
 	{"if $var not set, use empty string :+", "${NOTSET:+hello}", "", errNone},
 	{"multi line string", "hello $BAR\nhello ${EMPTY:=$FOO}", "hello bar\nhello foo", errNone},
@@ -107,7 +107,7 @@ var parseTests = []parseTest{
 	{"$var empty and $DEFAULT not set =", "${EMPTY=$NOTSET}", "", errEmpty},
 	{"$var empty and $DEFAULT not set :=", "${EMPTY:=$NOTSET}", "", errUnset},
 	{"$var empty and $OTHER not set +", "${EMPTY+$NOTSET}", "", errUnset},
-	{"$var empty and $OTHER not set :+", "${EMPTY:+$NOTSET}", "", errUnset},
+	{"$var empty and $OTHER not set :+", "${EMPTY:+$NOTSET}", "", errNone},
 
 	{"$var not set and $DEFAULT empty -", "${NOTSET-$EMPTY}", "", errEmpty},
 	{"$var not set and $DEFAULT empty :-", "${NOTSET:-$EMPTY}", "", errEmpty},
@@ -121,13 +121,18 @@ var parseTests = []parseTest{
 	{"$var and $DEFAULT empty =", "${EMPTY=$ALSO_EMPTY}", "", errEmpty},
 	{"$var and $DEFAULT empty :=", "${EMPTY:=$ALSO_EMPTY}", "", errEmpty},
 	{"$var and $OTHER empty +", "${EMPTY+$ALSO_EMPTY}", "", errEmpty},
-	{"$var and $OTHER empty :+", "${EMPTY:+$ALSO_EMPTY}", "", errEmpty},
+	{"$var and $OTHER empty :+", "${EMPTY:+$ALSO_EMPTY}", "", errNone},
 
 	// escaping.
 	{"escape $$var", "FOO $$BAR BAZ", "FOO $BAR BAZ", errNone},
 	{"escape $${subst}", "FOO $${BAR} BAZ", "FOO ${BAR} BAZ", errNone},
 	{"escape $$$var", "$$$BAR", "$bar", errNone},
 	{"escape $$${subst}", "$$${BAZ:-baz}", "$baz", errNone},
+
+	// Enhanced functionality tests
+	{"nested expansions level 1", "${NOTSET:-${FOO}}", "foo", errNone},
+	{"nested expansions level 2", "${NOTSET:-${NOTSET2:-fallback}}", "fallback", errNone},
+	{"variable in default value", "${NOTSET:-prefix $BAR suffix}", "prefix bar suffix", errNone},
 }
 
 var negativeParseTests = []parseTest{
@@ -224,7 +229,7 @@ var varMatcherTests = []struct {
 }{
 	{"nil matcher accepts all variables", "$BAR $FOO $test", "bar foo test", nil, false},
 	{"prefix matcher accepts only matching variables", "$APP_NAME $BAR $DB_HOST", " $BAR ",
-		func(v string) bool { return strings.HasPrefix(v, "APP_") || strings.HasPrefix(v, "DB_") }, false}, // Non-matching variables get consumed by lexer, only spaces and non-matching BAR remain
+		func(v string) bool { return strings.HasPrefix(v, "APP_") || strings.HasPrefix(v, "DB_") }, false}, // APP_NAME and DB_HOST match matcher but don't exist in env, so they're consumed, BAR doesn't match matcher
 	{"length matcher filters by variable name length", "$A $BAR $FOO", "AAA $BAR $FOO",
 		func(v string) bool { return len(v) <= 2 }, false}, // Only A (len=1) matches the length filter, BAR and FOO are 3 chars
 	{"case sensitive matcher", "$BAR $bar $FOO $foo", "bar $bar foo $foo",
@@ -244,7 +249,7 @@ var varMatcherTests = []struct {
 	{"substitution with defaults and non-matching variables", "${NOTSET:-default} ${NOTSET2:-backup}", "${NOTSET:-default} ${NOTSET2:-backup}",
 		func(v string) bool { return false }, false}, // Nothing matches // Neither variable matches
 	{"complex substitution with mixed matching", "${VALID:=$BAR} ${test:=$FOO}", "${VALID:=bar} test",
-		func(v string) bool { return v == "test" || v == "BAR" }, false}, // VALID doesn't match, test matches, BAR in default matches
+		func(v string) bool { return v == "test" || v == "BAR" }, false}, // VALID doesn't match but BAR in default gets expanded, test matches
 	{"nested variables in substitution", "${BAR-default} ${NOTSET-backup}", "bar ${NOTSET-backup}",
 		func(v string) bool { return v == "BAR" }, false}, // BAR matches, NOTSET doesn't
 	{"mixed simple and substitution variables", "prefix $FOO middle ${BAR} suffix $test end", "prefix foo middle ${BAR} suffix test end",

@@ -311,16 +311,23 @@ func TestLexMatcherEdgeCases(t *testing.T) {
 			tRight,
 			tEOF,
 		}},
-		{"nested substitution", "${VAR:=${INNER}}", func(v string) bool {
+		{"nested substitution", "${VAR:=${INNER:-${FOO:-t}}} EOF", func(v string) bool {
 			return v == "VAR" || v == "INNER"
 		}, []item{
 			tLeft,
 			{itemVariable, 0, "VAR"},
 			tColEquals,
-			{itemText, 0, "$"},
-			{itemText, 0, "{INNER"},
+			tLeft,
+			{itemVariable, 0, "INNER"},
+			tColDash,
+			tLeft,
+			{itemText, 0, "FOO"},
+			tColDash,
+			{itemText, 0, "t"},
 			tRight,
-			{itemText, 0, "}"},
+			tRight,
+			tRight,
+			{itemText, 0, " EOF"},
 			tEOF,
 		}},
 		{"substitution with accepted var", "${world:=$backup}", func(v string) bool {

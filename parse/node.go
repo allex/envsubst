@@ -110,8 +110,15 @@ func (t *SubstitutionNode) String() (string, error) {
 				return t.Variable.String()
 			}
 			return t.Default.String()
-		case itemPlus, itemColonPlus:
+		case itemPlus:
+			// + operator: return alternate if variable is set (regardless of value)
 			if t.Variable.isSet() {
+				return t.Default.String()
+			}
+			return "", nil
+		case itemColonPlus:
+			// :+ operator: return alternate if variable is set AND not empty
+			if t.Variable.isSet() && t.Variable.Env.Get(t.Variable.Ident) != "" {
 				return t.Default.String()
 			}
 			return "", nil

@@ -233,6 +233,9 @@ func lexSubstitutionOperator(l *lexer) stateFn {
 	case r == '}':
 		l.subsDepth--
 		l.emit(itemRightDelim)
+		if l.subsDepth > 0 {
+			return lexSubstitution
+		}
 		return lexText
 	case r == eof || isEndOfLine(r):
 		return l.errorf("closing brace expected")
@@ -263,12 +266,29 @@ func lexSubstitution(l *lexer) stateFn {
 	case r == '}':
 		l.subsDepth--
 		l.emit(itemRightDelim)
+		if l.subsDepth > 0 {
+			return lexSubstitution
+		}
 		return lexText
 	case r == eof || isEndOfLine(r):
 		return l.errorf("closing brace expected")
 	case isAlphaNumeric(r) && strings.HasPrefix(l.input[l.lastPos:], "${"):
 		fallthrough
 	case r == '$':
+		// Check if this is the start of a nested substitution
+		if l.peek() == '{' {
+			l.next() // consume the '{'
+			r2 := l.peek()
+			if l.noDigit && unicode.IsDigit(r2) {
+				// ignore variable starting with digit like ${1}.
+				l.next()
+				l.emit(itemText)
+				return lexSubstitution
+			}
+			l.subsDepth++
+			l.emit(itemLeftDelim)
+			return lexSubstitutionOperator
+		}
 		return lexVariable
 	default:
 		l.emit(itemText)

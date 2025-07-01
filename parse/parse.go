@@ -175,6 +175,22 @@ Loop:
 				switch p.peek().typ {
 				case itemRightDelim, itemError, itemEOF:
 					break Text
+				case itemVariable:
+					// Handle variable expansion in default values
+					nextToken := p.next()
+					varName := strings.TrimPrefix(nextToken.val, "$")
+					if p.Env.Has(varName) {
+						varValue := p.Env.Get(varName)
+						n.Text += varValue
+					} else {
+						// Variable not set, keep original text
+						n.Text += nextToken.val
+					}
+					sourceText += nextToken.val
+				case itemLeftDelim:
+					// For nested substitutions, break out of text processing
+					// and let the main parser loop handle the itemLeftDelim
+					break Text
 				default:
 					// patch to accept all kind of chars
 					nextToken := p.next()
@@ -183,6 +199,28 @@ Loop:
 				}
 			}
 			defaultNode = n
+		case itemLeftDelim:
+			// Handle nested substitution like ${VAR} within default values
+			if p.peek().typ == itemVariable {
+				nestedSubst, err := p.action()
+				if err != nil {
+					return nil, err
+				}
+				// Evaluate the nested substitution and use its result as the default
+				nestedResult, err := nestedSubst.String()
+				if err != nil {
+					return nil, err
+				}
+				defaultNode = NewText(nestedResult)
+				// Add nested substitution to source text
+				if substNode, ok := nestedSubst.(*SubstitutionNode); ok {
+					sourceText += substNode.Source
+				}
+			} else {
+				// Not a valid variable substitution, treat as text
+				defaultNode = NewText("${")
+				sourceText += "${"
+			}
 		default:
 			expType = t.typ
 			// Add operator tokens to source text
