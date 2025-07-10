@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.7](https://github.com/allex/envsubst/compare/v1.0.6...v1.0.7) (2025-07-10)
+
+
+### Features
+
+* add Strings method to Env for retrieving all environment variables as key-value strings ([67824dd](https://github.com/allex/envsubst/commit/67824ddc217d379dc52481de8362b064f6e4ff34))
+
 ### [1.0.6](https://github.com/allex/envsubst/compare/v1.0.5...v1.0.6) (2025-07-01)
 
 
