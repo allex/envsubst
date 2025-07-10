@@ -103,3 +103,19 @@ func (e *Env) Set(key, value string) {
 		e.indexes[key] = len(e.env) - 1
 	}
 }
+
+// Strings returns all environment variables as a slice of "KEY=VALUE" strings.
+// Empty entries (created during duplicate handling) are filtered out.
+// The returned slice contains all currently active environment variables.
+//
+// Example:
+//
+//	tuples := env.Strings()  // Returns []string{"HOME=/home/user", "PATH=/usr/bin", ...}
+func (e *Env) Strings() []string {
+	// Pre-allocate with exact capacity and iterate through indexes for efficiency
+	result := make([]string, 0, len(e.indexes))
+	for _, index := range e.indexes {
+		result = append(result, e.env[index])
+	}
+	return result
+}
