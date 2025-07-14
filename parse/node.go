@@ -2,7 +2,51 @@ package parse
 
 import (
 	"fmt"
+	"strings"
 )
+
+// PatternTransformer defines a function that transforms a variable value according to a specific pattern
+type PatternTransformer func(value string) string
+
+// PatternDefinition combines a transformer function with its syntax suffix
+type PatternDefinition struct {
+	Operator    string             // Bash expansion operator syntax (e.g., "^^", ",,")
+	Transformer PatternTransformer // Function to transform the variable value
+}
+
+// Pattern Transformer System
+//
+// The pattern transformer system provides a generic way to handle bash variable expansion patterns
+// that transform variable values. This abstraction makes it easy to add new transformation patterns
+// without modifying the core parsing logic.
+//
+// Architecture:
+// - PatternTransformer: Function type that defines how to transform values
+// - PatternDefinition: Struct combining transformer function and operator syntax
+// - patternDefinitions: Maps itemType to PatternDefinition structs
+// - RegisterPatternTransformer: Helper function to register new patterns
+//
+// Adding New Patterns:
+// 1. Define a new itemType in lex.go (e.g., itemTitleCase)
+// 2. Add lexer support for the pattern in lexSubstitutionOperator
+// 3. Register the pattern using RegisterPatternTransformer
+//
+// Example:
+//   RegisterPatternTransformer(itemTitleCase, "~T", strings.Title)
+//
+// This would enable ${VAR~T} to convert variables to title case.
+
+// patternDefinitions maps itemType to their corresponding pattern definitions
+var patternDefinitions = map[itemType]PatternDefinition{
+	itemCaretCaret: {"^^", strings.ToUpper}, // ^^ converts to uppercase
+	itemCommaComma: {",,", strings.ToLower}, // ,, converts to lowercase
+}
+
+// RegisterPatternTransformer allows registering new pattern transformers
+// This makes it easy to extend the system with additional transformation patterns
+func RegisterPatternTransformer(itemType itemType, operator string, transformer PatternTransformer) {
+	patternDefinitions[itemType] = PatternDefinition{operator, transformer}
+}
 
 type Node interface {
 	Type() NodeType
@@ -91,6 +135,20 @@ type SubstitutionNode struct {
 }
 
 func (t *SubstitutionNode) String() (string, error) {
+	// Handle pattern transformations using the transformer map
+	if patternDef, hasPatternDef := patternDefinitions[t.ExpType]; hasPatternDef {
+		if t.Variable.Restrict.KeepUnset && !t.Variable.isSet() {
+			// Return original syntax for unset variables when KeepUnset is enabled
+			return "${" + t.Variable.Ident + patternDef.Operator + "}", nil
+		}
+
+		value, err := t.Variable.String()
+		if err != nil {
+			return "", err
+		}
+		return patternDef.Transformer(value), nil
+	}
+
 	// Process default value logic first, regardless of KeepUnset setting
 	if t.ExpType >= itemPlus && t.Default != nil {
 		switch t.ExpType {

@@ -239,6 +239,8 @@ func main() {
 | Expression | Description |
 |------------|-------------|
 | `$VAR` or `${VAR}` | Simple variable substitution |
+| `${VAR^^}` | Convert variable value to uppercase |
+| `${VAR,,}` | Convert variable value to lowercase |
 | `${VAR-default}` | Use default if VAR is unset |
 | `${VAR:-default}` | Use default if VAR is unset or empty |
 | `${VAR=default}` | Set and use default if VAR is unset |
@@ -417,6 +419,81 @@ result, err := envsubst.String(template)
 // Process k8s manifests with environment-specific values
 manifest, err := envsubst.ReadFileRestricted("deployment.yaml", true, false)
 ```
+
+## Pattern Transformer System
+
+The `envsubst` package includes an extensible pattern transformer system that allows for easy addition of new variable transformation patterns. This system is used to implement bash-style case conversion operators like `${VAR^^}` and `${VAR,,}`.
+
+### Architecture
+
+The pattern transformer system consists of:
+
+- **`PatternTransformer`**: Function type that defines how to transform values
+- **`PatternDefinition`**: Struct combining transformer function and operator syntax  
+- **`patternDefinitions`**: Maps itemType to PatternDefinition structs
+- **`RegisterPatternTransformer`**: Helper function to register new patterns
+
+### Using Pattern Transformers
+
+```go
+// Case conversion examples
+template := `
+Original: ${MESSAGE}
+Uppercase: ${MESSAGE^^}
+Lowercase: ${MESSAGE,,}
+`
+
+os.Setenv("MESSAGE", "Hello World")
+result, err := envsubst.String(template)
+// Output:
+// Original: Hello World
+// Uppercase: HELLO WORLD  
+// Lowercase: hello world
+```
+
+### Extending with Custom Patterns
+
+The system is designed to be easily extensible. Here's how you would add a new transformation pattern:
+
+```go
+import (
+    "strings"
+    "github.com/allex/envsubst/parse"
+)
+
+// 1. Define a new itemType in parse/lex.go
+const itemTitleCase parse.itemType = 999
+
+// 2. Add lexer support in parse/lex.go lexSubstitutionOperator function
+
+// 3. Register the new pattern transformer
+parse.RegisterPatternTransformer(itemTitleCase, "~T", strings.Title)
+```
+
+This would enable `${VAR~T}` to convert variables to title case.
+
+### Pattern Behavior with Restrictions
+
+Pattern transformers work seamlessly with all restriction modes:
+
+```go
+// With KeepUnset - unset variables preserve original syntax
+parser := parse.New("test", env, &parse.Restrictions{KeepUnset: true})
+result, _ := parser.Parse("${UNSET_VAR^^}")
+// Result: "${UNSET_VAR^^}"
+
+// With NoUnset - unset variables cause errors  
+parser = parse.New("test", env, &parse.Restrictions{NoUnset: true})
+_, err := parser.Parse("${UNSET_VAR^^}")
+// Returns error: variable ${UNSET_VAR} not set
+```
+
+### Built-in Transformers
+
+| Pattern | Operator | Description |
+|---------|----------|-------------|
+| `${VAR^^}` | `^^` | Convert all characters to uppercase |
+| `${VAR,,}` | `,,` | Convert all characters to lowercase |
 
 ## Changelog and Versioning
 

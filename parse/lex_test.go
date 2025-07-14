@@ -19,15 +19,17 @@ type lexTestWithMatcher struct {
 }
 
 var (
-	tEOF       = item{itemEOF, 0, ""}
-	tPlus      = item{itemPlus, 0, ""}
-	tDash      = item{itemDash, 0, "-"}
-	tEquals    = item{itemEquals, 0, "="}
-	tColEquals = item{itemColonEquals, 0, ":="}
-	tColDash   = item{itemColonDash, 0, ":-"}
-	tColPlus   = item{itemColonPlus, 0, ":+"}
-	tLeft      = item{itemLeftDelim, 0, "${"}
-	tRight     = item{itemRightDelim, 0, "}"}
+	tEOF        = item{itemEOF, 0, ""}
+	tPlus       = item{itemPlus, 0, ""}
+	tDash       = item{itemDash, 0, "-"}
+	tEquals     = item{itemEquals, 0, "="}
+	tColEquals  = item{itemColonEquals, 0, ":="}
+	tColDash    = item{itemColonDash, 0, ":-"}
+	tColPlus    = item{itemColonPlus, 0, ":+"}
+	tCaretCaret = item{itemCaretCaret, 0, "^^"}
+	tCommaComma = item{itemCommaComma, 0, ",,"}
+	tLeft       = item{itemLeftDelim, 0, "${"}
+	tRight      = item{itemRightDelim, 0, "}"}
 )
 
 var lexTests = []lexTest{
@@ -150,6 +152,34 @@ var lexTests = []lexTest{
 		{itemText, 0, "hello "},
 		{itemText, 7, "${2"},
 		{itemText, 10, "ABC}"},
+		tEOF,
+	}},
+	{"uppercase conversion ^^", "${VAR^^}", []item{
+		tLeft,
+		{itemVariable, 0, "VAR"},
+		tCaretCaret,
+		tRight,
+		tEOF,
+	}},
+	{"lowercase conversion ,,", "${VAR,,}", []item{
+		tLeft,
+		{itemVariable, 0, "VAR"},
+		tCommaComma,
+		tRight,
+		tEOF,
+	}},
+	{"single caret as text", "${VAR^}", []item{
+		tLeft,
+		{itemVariable, 0, "VAR"},
+		{itemText, 0, "^"},
+		tRight,
+		tEOF,
+	}},
+	{"single comma as text", "${VAR,}", []item{
+		tLeft,
+		{itemVariable, 0, "VAR"},
+		{itemText, 0, ","},
+		tRight,
 		tEOF,
 	}},
 }

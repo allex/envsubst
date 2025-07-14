@@ -40,6 +40,8 @@ const (
 	itemColonEquals // colon-equals (':=')
 	itemColonDash   // colon-dash(':-')
 	itemColonPlus   // colon-plus(':+')
+	itemCaretCaret  // caret-caret('^^') for uppercase conversion
+	itemCommaComma  // comma-comma(',,') for lowercase conversion
 	itemVariable    // variable starting with '$', such as '$hello' or '$1'
 	itemLeftDelim   // left action delimiter '${'
 	itemRightDelim  // right action delimiter '}'
@@ -247,6 +249,20 @@ func lexSubstitutionOperator(l *lexer) stateFn {
 		l.emit(itemDash)
 	case r == '=':
 		l.emit(itemEquals)
+	case r == '^':
+		if l.peek() == '^' {
+			l.next() // consume the second '^'
+			l.emit(itemCaretCaret)
+		} else {
+			l.emit(itemText)
+		}
+	case r == ',':
+		if l.peek() == ',' {
+			l.next() // consume the second ','
+			l.emit(itemCommaComma)
+		} else {
+			l.emit(itemText)
+		}
 	case r == ':':
 		switch l.next() {
 		case '-':

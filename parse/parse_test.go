@@ -12,6 +12,7 @@ var FakeEnv = NewEnv([]string{
 	"ALSO_EMPTY=",
 	"A=AAA",
 	"test=test",
+	"SPECIAL=Hello_World-123",
 })
 
 type mode int
@@ -85,6 +86,16 @@ var parseTests = []parseTest{
 	// single letter
 	{"gh-issue-43-1", "${A}", "AAA", errNone},
 
+	// case conversion patterns
+	{"uppercase conversion", "${BAR^^}", "BAR", errNone},
+	{"lowercase conversion", "${FOO,,}", "foo", errNone},
+	{"uppercase mixed case", "${test^^}", "TEST", errNone},
+	{"lowercase mixed case", "${test,,}", "test", errNone},
+	{"uppercase with special chars", "${SPECIAL^^}", "HELLO_WORLD-123", errNone},
+	{"lowercase with special chars", "${SPECIAL,,}", "hello_world-123", errNone},
+	{"unset variable with uppercase", "${NOTSET^^}", "", errUnset},
+	{"unset variable with lowercase", "${NOTSET,,}", "", errUnset},
+
 	// bad substitution
 	{"closing brace expected", "hello ${", "", errAll},
 
@@ -157,6 +168,11 @@ var keepUnsetTests = []parseTest{
 	{"keep unset with plus", "${NOTSET+replacement}", "", errNone},
 	{"mixed set and unset", "$BAR $NOTSET", "bar $NOTSET", errNone},
 	{"multiple unset variables", "$NOTSET1 $NOTSET2", "$NOTSET1 $NOTSET2", errNone},
+	// Pattern transformer tests with KeepUnset
+	{"keep unset uppercase pattern", "${NOTSET^^}", "${NOTSET^^}", errNone},
+	{"keep unset lowercase pattern", "${NOTSET,,}", "${NOTSET,,}", errNone},
+	{"transform set uppercase pattern", "${BAR^^}", "BAR", errNone},
+	{"transform set lowercase pattern", "${FOO,,}", "foo", errNone},
 }
 
 func TestParse(t *testing.T) {
