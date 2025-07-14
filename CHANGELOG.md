@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.8](https://github.com/allex/envsubst/compare/v1.0.7...v1.0.8) (2025-07-14)
+
+
+### Features
+
+* add support for bash case conversion operators `${VAR^^}` and `${VAR,,}` ([d57f2df](https://github.com/allex/envsubst/commit/d57f2df5e40c4d4d14a1a81f88dcb7d477f92adb))
+
 ### [1.0.7](https://github.com/allex/envsubst/compare/v1.0.6...v1.0.7) (2025-07-10)
 
 
